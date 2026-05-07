@@ -76,13 +76,14 @@ export default function AuditResultPage() {
   const [result, setResult] = useState<AuditResult | null>(null);
   const [notFound, setNotFound] = useState(false);
 
-  useEffect(() => {
+useEffect(() => {
     const id = params.id as string;
     const stored = localStorage.getItem(`audit_result_${id}`);
-    if (stored) {
-      setResult(JSON.parse(stored));
+    const parsed = stored ? (JSON.parse(stored) as AuditResult) : null;
+    if (parsed) {
+      setTimeout(() => setResult(parsed), 0);
     } else {
-      setNotFound(true);
+      setTimeout(() => setNotFound(true), 0);
     }
   }, [params.id]);
 
