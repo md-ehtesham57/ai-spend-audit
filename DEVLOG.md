@@ -18,7 +18,7 @@ selection, and localStorage persistence.
 
 ## Day 2 — 2025-05-07
 
-**Hours worked:** X
+**Hours worked:** 3
 
 **What I did:** Built the spend input form with tool selector, plan selector,
 monthly spend and seats inputs, localStorage persistence, and use case selector.
