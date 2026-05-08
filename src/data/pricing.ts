@@ -237,13 +237,13 @@ export const PRICING_DATA: ToolPricing[] = [
 ];
 
 // Helper: get pricing for a specific tool
-export function getToolPricing(toolName: ToolName): ToolPricing | undefined {
+export function getToolPricing(toolName: string): ToolPricing | undefined {
   return PRICING_DATA.find((t) => t.toolName === toolName);
 }
 
 // Helper: get a specific plan
 export function getPlanInfo(
-  toolName: ToolName,
+  toolName: string,
   planName: string
 ): PlanInfo | undefined {
   return getToolPricing(toolName)?.plans.find(

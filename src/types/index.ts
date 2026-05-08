@@ -14,10 +14,22 @@ export type UseCase = "coding" | "writing" | "data" | "research" | "mixed";
 
 // A single tool entry filled by the user
 export interface ToolEntry {
-  tool: ToolName;
+  tool: ToolName | "";
   plan: string;
   monthlySpend: number;
   seats: number;
+}
+
+export function isValidToolName(value: string): value is ToolName {
+  const valid: ToolName[] = ["cursor", "github_copilot", "claude", "chatgpt", "anthropic_api", "openai_api", "gemini", "windsurf"];
+  return valid.includes(value as ToolName);
+}
+
+export function validateToolName(value: string): ToolName {
+  if (!isValidToolName(value)) {
+    return "cursor";
+  }
+  return value;
 }
 
 // The full form data
