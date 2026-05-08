@@ -28,11 +28,10 @@ function ToolCard({ result }: { result: ToolAuditResult }) {
   const isOptimal = result.monthlySavings <= 0;
   return (
     <div
-      className={`rounded-xl border p-5 ${
-        isOptimal
+      className={`rounded-xl border p-5 ${isOptimal
           ? "border-gray-700 bg-gray-800/40"
           : "border-amber-800/50 bg-amber-900/10"
-      }`}
+        }`}
     >
       <div className="flex items-start justify-between gap-4">
         <div>
@@ -73,10 +72,11 @@ function ToolCard({ result }: { result: ToolAuditResult }) {
 export default function AuditResultPage() {
   const params = useParams();
   const router = useRouter();
+  const [summary, setSummary] = useState<string | null>(null);
   const [result, setResult] = useState<AuditResult | null>(null);
   const [notFound, setNotFound] = useState(false);
 
-useEffect(() => {
+  useEffect(() => {
     const id = params.id as string;
     const stored = localStorage.getItem(`audit_result_${id}`);
     const parsed = stored ? (JSON.parse(stored) as AuditResult) : null;
@@ -86,6 +86,20 @@ useEffect(() => {
       setTimeout(() => setNotFound(true), 0);
     }
   }, [params.id]);
+
+  useEffect(() => {
+    if (!result) return;
+    fetch("/api/summary", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(result),
+    })
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.summary) setSummary(data.summary);
+      })
+      .catch(() => null);
+  }, [result]);
 
   if (notFound) {
     return (
@@ -167,11 +181,21 @@ useEffect(() => {
                   target="_blank"
                   rel="noopener noreferrer"
                   className="mt-3 inline-block rounded-lg bg-blue-600 px-5 py-2 text-sm font-medium text-white hover:bg-blue-500 transition-colors"
-                  >
+                >
                   Book a free Credex consultation →
                 </a>
               </div>
             </div>
+          </div>
+        )}
+
+        {/* AI Summary */}
+        {summary && (
+          <div className="rounded-xl border border-gray-700 bg-gray-800/40 p-6">
+            <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-gray-400">
+              AI Analysis
+            </p>
+            <p className="text-gray-300 leading-relaxed">{summary}</p>
           </div>
         )}
 
