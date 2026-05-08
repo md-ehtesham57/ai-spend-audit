@@ -1,9 +1,13 @@
 import { ToolEntry, ToolAuditResult, AuditFormData } from "@/types";
 import { getToolPricing, getPlanInfo } from "@/data/pricing";
 
-function auditTool(entry: ToolEntry, formData: AuditFormData): ToolAuditResult {
+function auditTool(entry: ToolEntry, formData: AuditFormData): ToolAuditResult | null {
   const { tool, plan, monthlySpend, seats } = entry;
   const { useCase } = formData;
+
+  // Skip empty tool entries
+  if (!tool) return null;
+
   const toolPricing = getToolPricing(tool);
 
   // Fallback if tool not found in pricing database
@@ -241,9 +245,9 @@ export function runAudit(formData: AuditFormData): {
   totalMonthlySavings: number;
   totalAnnualSavings: number;
 } {
-  const toolResults = formData.tools.map((entry) =>
-    auditTool(entry, formData)
-  );
+  const toolResults = formData.tools
+    .map((entry) => auditTool(entry, formData))
+    .filter((r): r is ToolAuditResult => r !== null);
 
   const totalMonthlySavings = toolResults.reduce(
     (sum, r) => sum + Math.max(0, r.monthlySavings),
