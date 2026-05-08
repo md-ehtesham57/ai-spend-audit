@@ -49,8 +49,22 @@ function isAllowedOrigin(req: NextRequest): boolean {
   const referer = req.headers.get("referer");
   const host = req.headers.get("host");
   if (!host) return false;
-  if (origin && !origin.includes(host)) return false;
-  if (referer && !referer.includes(host)) return false;
+  if (origin) {
+    try {
+      const originUrl = new URL(origin);
+      if (originUrl.host !== host) return false;
+    } catch {
+      return false;
+    }
+  }
+  if (referer) {
+    try {
+      const refererUrl = new URL(referer);
+      if (refererUrl.host !== host) return false;
+    } catch {
+      return false;
+    }
+  }
   return true;
 }
 
