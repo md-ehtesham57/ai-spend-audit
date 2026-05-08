@@ -6,20 +6,6 @@ import { AuditResult, ToolAuditResult } from "@/types";
 import LeadCaptureForm from "@/components/results/LeadCaptureForm";
 import { PRICING_DATA } from "@/data/pricing";
 
-export const metadata = {
-  title: "My AI Spend Audit — AI Spend Audit",
-  description: "See how much I could save on AI tools every month.",
-  openGraph: {
-    title: "My AI Spend Audit",
-    description: "See how much I could save on AI tools every month.",
-    type: "website",
-  },
-  twitter: {
-    card: "summary_large_image",
-    title: "My AI Spend Audit",
-    description: "See how much I could save on AI tools every month.",
-  },
-};
 
 function getToolDisplayName(toolName: string): string {
   return PRICING_DATA.find((t) => t.toolName === toolName)?.displayName ?? toolName;
