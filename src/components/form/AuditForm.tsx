@@ -8,7 +8,7 @@ import { runAudit } from "@/lib/auditEngine";
 import { v4 as uuidv4 } from "uuid";
 
 const EMPTY_TOOL: ToolEntry = {
-    tool: "" as ToolName,
+    tool: "",
     plan: "",
     monthlySpend: 0,
     seats: 1,
@@ -86,10 +86,9 @@ export default function AuditForm() {
         const id = uuidv4();
 
         // Store result in localStorage for the results page
-        localStorage.setItem(
-            `audit_result_${id}`,
-            JSON.stringify({ id, formData, ...auditResult, createdAt: new Date().toISOString() })
-        );
+        const auditData = { id, formData, ...auditResult, createdAt: new Date().toISOString() };
+        localStorage.setItem(`audit_result_${id}`, JSON.stringify(auditData));
+        localStorage.removeItem(STORAGE_KEY);
 
         router.push(`/audit/${id}`);
     };

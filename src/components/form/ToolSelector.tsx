@@ -1,6 +1,6 @@
 "use client";
 
-import { ToolName } from "@/types";
+import { ToolName, validateToolName } from "@/types";
 
 const TOOLS: { value: ToolName; label: string }[] = [
   { value: "cursor", label: "Cursor" },
@@ -23,7 +23,7 @@ export default function ToolSelector({ value, onChange, usedTools }: Props) {
   return (
     <select
       value={value}
-      onChange={(e) => onChange(e.target.value as ToolName)}
+      onChange={(e) => onChange(validateToolName(e.target.value))}
       className="w-full rounded-lg border border-gray-700 bg-gray-800 px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-emerald-500"
     >
       <option value="">Select a tool...</option>

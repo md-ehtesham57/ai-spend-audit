@@ -1,38 +1,36 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabase } from "@/lib/supabase";
 
-interface LeadPayload {
-  auditId: string;
-  email: string;
-  companyName?: string;
-  role?: string;
-  teamSize?: number;
-  totalMonthlySavings: number;
-  totalAnnualSavings: number;
-  useCase: string;
-  tools: object;
-}
-
-// Basic honeypot + rate limit check
-function isAbuse(body: Record<string, string>, ip: string): boolean {
-  // Honeypot field — bots fill this, humans don't see it
-  if (body.website && body.website.length > 0) return true;
-  // Block obviously fake emails
-  if (!body.email.includes("@") || !body.email.includes(".")) return true;
+function isAbuse(email: string, honeypot: string): boolean {
+  if (honeypot && honeypot.length > 0) return true;
+  if (!email.includes("@") || !email.includes(".")) return true;
   return false;
 }
 
 export async function POST(req: NextRequest) {
   try {
-    const body = await req.json() as LeadPayload & { website?: string };
-    const ip = req.headers.get("x-forwarded-for") ?? "unknown";
+    const body = await req.json();
+    const {
+      auditId,
+      email,
+      companyName,
+      role,
+      teamSize,
+      totalMonthlySavings,
+      totalAnnualSavings,
+      useCase,
+      tools,
+      website = "",
+    } = body;
 
     // Abuse protection
-    if (isAbuse(body as unknown as Record<string, string>, ip)) {
+    if (isAbuse(email, website)) {
       return NextResponse.json({ error: "Invalid request" }, { status: 400 });
     }
 
-    // Rate limit: max 3 submissions per IP
+    const ip = req.headers.get("x-forwarded-for") ?? "unknown";
+
+    // Rate limit check
     const { data: rateData } = await supabase
       .from("rate_limits")
       .select("count")
@@ -55,15 +53,15 @@ export async function POST(req: NextRequest) {
 
     // Save lead
     const { error } = await supabase.from("leads").insert({
-      audit_id: body.auditId,
-      email: body.email,
-      company_name: body.companyName ?? null,
-      role: body.role ?? null,
-      team_size: body.teamSize ?? null,
-      total_monthly_savings: body.totalMonthlySavings,
-      total_annual_savings: body.totalAnnualSavings,
-      use_case: body.useCase,
-      tools: body.tools,
+      audit_id: auditId,
+      email,
+      company_name: companyName ?? null,
+      role: role ?? null,
+      team_size: teamSize ?? null,
+      total_monthly_savings: totalMonthlySavings,
+      total_annual_savings: totalAnnualSavings,
+      use_case: useCase,
+      tools,
     });
 
     if (error) throw error;
