@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { AuditResult, ToolAuditResult } from "@/types";
+import LeadCaptureForm from "@/components/results/LeadCaptureForm";
 import { PRICING_DATA } from "@/data/pricing";
 
 function getToolDisplayName(toolName: string): string {
@@ -29,8 +30,8 @@ function ToolCard({ result }: { result: ToolAuditResult }) {
   return (
     <div
       className={`rounded-xl border p-5 ${isOptimal
-          ? "border-gray-700 bg-gray-800/40"
-          : "border-amber-800/50 bg-amber-900/10"
+        ? "border-gray-700 bg-gray-800/40"
+        : "border-amber-800/50 bg-amber-900/10"
         }`}
     >
       <div className="flex items-start justify-between gap-4">
@@ -210,6 +211,9 @@ export default function AuditResultPage() {
             ))}
           </div>
         </div>
+
+        {/* Lead capture */}
+        <LeadCaptureForm auditResult={result} isHighSavings={isHighSavings} />
 
         {/* Share + new audit */}
         <div className="flex flex-col gap-3 sm:flex-row">
