@@ -20,6 +20,7 @@ function isAllowedOrigin(req: NextRequest): boolean {
   const referer = req.headers.get("referer");
   const host = req.headers.get("host");
   if (!host) return false;
+  if (!origin && !referer) return false;
   if (origin) {
     try {
       const originUrl = new URL(origin);
@@ -70,7 +71,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Invalid request" }, { status: 400 });
     }
 
-    const ip = getClientIp(req);
+    const ip = `leads:${getClientIp(req)}`;
     const RATE_LIMIT_WINDOW_MS = 60_000;
     const RATE_LIMIT_MAX = 3;
 
