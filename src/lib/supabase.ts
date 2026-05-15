@@ -9,4 +9,9 @@ if (!supabaseUrl || !supabaseAnonKey) {
   );
 }
 
+// IMPORTANT: This anon key is exposed to the browser (NEXT_PUBLIC_ prefix).
+// All database access MUST go through server-side API routes, NEVER directly
+// from client components. RLS policies on Supabase must restrict anon access
+// to only the operations these API routes perform (INSERT on leads + rate_limits,
+// SELECT/UPDATE on rate_limits). See supabase/migrations/002_rls_policies.sql.
 export const supabase = createClient(supabaseUrl, supabaseAnonKey);

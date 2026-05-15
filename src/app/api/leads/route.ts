@@ -3,16 +3,16 @@ import { z } from "zod";
 import { supabase } from "@/lib/supabase";
 
 const leadSchema = z.object({
-  auditId: z.string().min(1),
-  email: z.string().email(),
-  companyName: z.string().optional(),
-  role: z.string().optional(),
-  teamSize: z.number().optional(),
-  totalMonthlySavings: z.number(),
-  totalAnnualSavings: z.number(),
-  useCase: z.string(),
+  auditId: z.string().min(1).max(100),
+  email: z.string().email().max(255),
+  companyName: z.string().max(200).optional(),
+  role: z.string().max(200).optional(),
+  teamSize: z.number().int().positive().max(100000).optional(),
+  totalMonthlySavings: z.number().finite(),
+  totalAnnualSavings: z.number().finite(),
+  useCase: z.string().max(50),
   tools: z.array(z.unknown()),
-  website: z.string(),
+  website: z.string().max(0),
 });
 
 function isAllowedOrigin(req: NextRequest): boolean {
@@ -48,6 +48,22 @@ function getClientIp(req: NextRequest): string {
   return "unknown";
 }
 
+async function checkRateLimit(ip: string, max: number, windowMs: number): Promise<{ allowed: boolean }> {
+  const { data, error } = await supabase.rpc("check_rate_limit", {
+    p_ip: ip,
+    p_max_count: max,
+    p_window_ms: windowMs,
+  });
+
+  // If RPC fails (function not deployed), fail open — log the error
+  if (error) {
+    console.error("Rate limit RPC failed, allowing request:", error.message);
+    return { allowed: true };
+  }
+
+  return { allowed: data?.allowed ?? true };
+}
+
 export async function POST(req: NextRequest) {
   try {
     if (!isAllowedOrigin(req)) {
@@ -64,52 +80,13 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const { website } = parsed.data;
-
-    // Honeypot check: website must be present and exactly empty string
-    if (website !== "") {
-      return NextResponse.json({ error: "Invalid request" }, { status: 400 });
-    }
-
     const ip = `leads:${getClientIp(req)}`;
-    const RATE_LIMIT_WINDOW_MS = 60_000;
-    const RATE_LIMIT_MAX = 3;
-
-    const { data: existing } = await supabase
-      .from("rate_limits")
-      .select("count, last_request")
-      .eq("ip", ip)
-      .maybeSingle();
-
-    const now = new Date().toISOString();
-
-    if (existing) {
-      const elapsed = Date.now() - new Date(existing.last_request).getTime();
-
-      if (elapsed > RATE_LIMIT_WINDOW_MS) {
-        await supabase
-          .from("rate_limits")
-          .update({ count: 1, last_request: now })
-          .eq("ip", ip);
-      } else if (existing.count >= RATE_LIMIT_MAX) {
-        return NextResponse.json(
-          { error: "Too many requests" },
-          { status: 429 }
-        );
-      } else {
-        await supabase
-          .from("rate_limits")
-          .update({ count: existing.count + 1, last_request: now })
-          .eq("ip", ip);
-      }
-    } else {
-      const { error: insertErr } = await supabase
-        .from("rate_limits")
-        .insert({ ip, count: 1, last_request: now });
-
-      if (insertErr && insertErr.code !== "23505") {
-        throw insertErr;
-      }
+    const { allowed } = await checkRateLimit(ip, 3, 60_000);
+    if (!allowed) {
+      return NextResponse.json(
+        { error: "Too many requests" },
+        { status: 429 }
+      );
     }
 
     const { error } = await supabase.from("leads").insert({

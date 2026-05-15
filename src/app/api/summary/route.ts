@@ -3,21 +3,21 @@ import { z } from "zod";
 import { supabase } from "@/lib/supabase";
 
 const auditResultSchema = z.object({
-  id: z.string().min(1),
+  id: z.string().min(1).max(100),
   formData: z.object({
     tools: z.array(z.object({
-      tool: z.string().min(1),
-      plan: z.string(),
-      monthlySpend: z.number(),
-      seats: z.number(),
+      tool: z.string().min(1).max(50),
+      plan: z.string().max(100),
+      monthlySpend: z.number().finite(),
+      seats: z.number().int().positive().max(100000),
     })),
-    teamSize: z.number(),
-    useCase: z.string(),
+    teamSize: z.number().int().positive().max(100000),
+    useCase: z.string().max(50),
   }),
   toolResults: z.array(z.unknown()),
-  totalMonthlySavings: z.number(),
-  totalAnnualSavings: z.number(),
-  createdAt: z.string(),
+  totalMonthlySavings: z.number().finite(),
+  totalAnnualSavings: z.number().finite(),
+  createdAt: z.string().max(50),
 });
 
 type AuditResult = z.infer<typeof auditResultSchema>;
@@ -86,44 +86,19 @@ export async function POST(req: NextRequest) {
     }
 
     const ip = `summary:${getClientIp(req)}`;
-    const RATE_LIMIT_WINDOW_MS = 60_000;
-    const RATE_LIMIT_MAX = 30;
+    const { data, error: rlErr } = await supabase.rpc("check_rate_limit", {
+      p_ip: ip,
+      p_max_count: 30,
+      p_window_ms: 60_000,
+    });
 
-    const { data: existing } = await supabase
-      .from("rate_limits")
-      .select("count, last_request")
-      .eq("ip", ip)
-      .maybeSingle();
-
-    const now = new Date().toISOString();
-
-    if (existing) {
-      const elapsed = Date.now() - new Date(existing.last_request).getTime();
-
-      if (elapsed > RATE_LIMIT_WINDOW_MS) {
-        await supabase
-          .from("rate_limits")
-          .update({ count: 1, last_request: now })
-          .eq("ip", ip);
-      } else if (existing.count >= RATE_LIMIT_MAX) {
-        return NextResponse.json(
-          { error: "Too many requests" },
-          { status: 429 }
-        );
-      } else {
-        await supabase
-          .from("rate_limits")
-          .update({ count: existing.count + 1, last_request: now })
-          .eq("ip", ip);
-      }
-    } else {
-      const { error: insertErr } = await supabase
-        .from("rate_limits")
-        .insert({ ip, count: 1, last_request: now });
-
-      if (insertErr && insertErr.code !== "23505") {
-        throw insertErr;
-      }
+    if (rlErr) {
+      console.error("Rate limit RPC failed, allowing request:", rlErr.message);
+    } else if (!data?.allowed) {
+      return NextResponse.json(
+        { error: "Too many requests" },
+        { status: 429 }
+      );
     }
 
     const summary = buildFallbackSummary(parsed.data);

@@ -12,7 +12,21 @@ const nextConfig: NextConfig = {
           { key: "X-Permitted-Cross-Domain-Policies", value: "none" },
           { key: "Strict-Transport-Security", value: "max-age=63072000; includeSubDomains; preload" },
           { key: "Permissions-Policy", value: "camera=(), microphone=(), geolocation=(), interest-cohort=()" },
-          { key: "Content-Security-Policy", value: "default-src 'self'; script-src 'self' 'unsafe-eval' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src 'self' https://lqcdnudqopgmiuvlgspv.supabase.co; frame-src 'none'; object-src 'none'" },
+          {
+            key: "Content-Security-Policy",
+            value: [
+              "default-src 'self'",
+              "script-src 'self' 'unsafe-inline'",
+              "style-src 'self' 'unsafe-inline'",
+              "img-src 'self' data: blob:",
+              "font-src 'self'",
+              "connect-src 'self' https://*.supabase.co wss://*.supabase.co",
+              "frame-src 'none'",
+              "object-src 'none'",
+              "base-uri 'none'",
+              "form-action 'self'",
+            ].join("; "),
+          },
         ],
       },
     ];
